@@ -13,7 +13,7 @@ image: python:latest
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-# https://pip.pypa.io/en/stable/topics/caching/
+# https ://pip.pypa.io/en/stable/topics/caching/
 cache:
   paths:
     - .cache/pip
