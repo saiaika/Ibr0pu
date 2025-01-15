@@ -18,7 +18,7 @@ from pymongo import MongoClient
 # MongoDB setup
 MONGO_URI = "mongodb+srv://lm6000k:IBRSupreme@ibrdata.uo83r.mongodb.net/"
 client = MongoClient(MONGO_URI)
-
+ 
 # Database and collection
 db = client['action']  # Replace 'action' with your database name if different
 actions_collection = db['action']  # 'action' is the collection name
