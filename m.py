@@ -473,7 +473,7 @@ def handle_message(message):
         match = auto_mode_pattern.match(text)
         if match:
             ip, port = match.groups()
-            duration = random.randint(900, 1000)  # Random duration for auto mode
+            duration = random.randint(200, 300)  # Random duration for auto mode
 
             # Validate IP and Port
             if not is_valid_ip(ip):
