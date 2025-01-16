@@ -1,4 +1,3 @@
-
 import os
 import re
 import subprocess
@@ -677,27 +676,3 @@ if __name__ == '__main__':
         bot.polling(none_stop=True)
     except Exception as e:
         logging.error(f"Error occurred: {str(e)}")
-
-
-# New Features: Ping and Program Status Check
-@bot.message_handler(commands=['ping'])
-def send_ping(message):
-    try:
-        hostname = "192.168.1.1"  # Replace with your server IP or domain
-        response = subprocess.Popen(['ping', '-c', '4', hostname], stdout=subprocess.PIPE).communicate()[0]
-        ping_result = response.decode('utf-8')
-        bot.reply_to(message, f"📡 Ping Results:\n\n{ping_result}")
-    except Exception as e:
-        bot.reply_to(message, f"⚠️ An error occurred while pinging the server: {str(e)}")
-
-@bot.message_handler(commands=['check_program'])
-def check_running_program(message):
-    try:
-        # Example: Check if 'example.py' is running
-        result = subprocess.run(['pgrep', '-f', 'example.py'], stdout=subprocess.PIPE)
-        if result.returncode == 0:
-            bot.reply_to(message, "✅ Program 'example.py' is running.")
-        else:
-            bot.reply_to(message, "❌ Program 'example.py' is not running.")
-    except Exception as e:
-        bot.reply_to(message, f"⚠️ An error occurred while checking the program status: {str(e)}")
