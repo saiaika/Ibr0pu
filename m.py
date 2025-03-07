@@ -419,7 +419,7 @@ def get_thread_value(user_id):
     user_settings = actions_collection.find_one({'user_id': user_id})
     if user_settings and 'thread_value' in user_settings:
         return user_settings['thread_value']
-    return random.choice([200, 200, 210])
+    return random.choice([600, 650, 700])
 
 def set_thread_value(user_id, value):
     """Set the user's preferred thread value in the database."""
