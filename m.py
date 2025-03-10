@@ -28,7 +28,7 @@ logging.basicConfig(filename='bot_actions.log', level=logging.INFO,
                     format='%(asctime)s - %(message)s')
 
 # Initialize the bot with the token from environment variables
-TOKEN = "7589844293:AAG2nNWmwjbtl9bP2RkYAFJreftSJV6-n4o"
+TOKEN = "7603189852:AAHUZMPEIObeNoit8T7-KmFZ0ofcwFr69PA"
 if not TOKEN:
     raise ValueError("Please set your bot token in the environment variables!")
 
