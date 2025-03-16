@@ -612,7 +612,7 @@ def run_action(user_id, message, ip, port, duration):
         logging.info(f"User {user_id} started action on IP {ip}, Port {port}, Duration {duration}s")
 
         # Build the full command to execute
-        full_command = f"./action {ip} {port} {duration} {thread_value}"
+        full_command = f"./soulcrack {ip} {port} {duration} {thread_value}"
 
         # Start the command as a non-blocking subprocess
         process = subprocess.Popen(full_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
