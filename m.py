@@ -28,7 +28,7 @@ logging.basicConfig(filename='bot_actions.log', level=logging.INFO,
                     format='%(asctime)s - %(message)s')
 
 # Initialize the bot with the token from environment variables
-TOKEN = "7603189852:AAHUZMPEIObeNoit8T7-KmFZ0ofcwFr69PA"
+TOKEN = "7267969157:AAFBW9fqZYa1kMnAB9CerIxWQnJ0-6c7Wns"
 if not TOKEN:
     raise ValueError("Please set your bot token in the environment variables!")
 
@@ -419,7 +419,7 @@ def get_thread_value(user_id):
     user_settings = actions_collection.find_one({'user_id': user_id})
     if user_settings and 'thread_value' in user_settings:
         return user_settings['thread_value']
-    return random.choice([600, 650, 700])
+    return random.choice([200, 200, 210])
 
 def set_thread_value(user_id, value):
     """Set the user's preferred thread value in the database."""
@@ -512,17 +512,7 @@ def handle_message(message):
             stop_button = KeyboardButton('Stop Action')
             markup.add(stop_button)
 
-            # Respond to the user that the action is starting
-            bot.reply_to(message, (
-                f"🔧 *Got it! Starting action in Auto Mode...* 💥\n\n"
-                f"🌍 *Target IP:* `{ip}`\n"
-                f"🔌 *Port:* `{port}`\n"
-                f"⏳ *Duration:* `{duration} seconds`\n\n"
-                "Hang tight, action is being processed... ⚙️\n\n"
-                "_This bot was made by Ibr._"
-            ), parse_mode='Markdown', reply_markup=markup)
-
-            run_action(user_id, message, ip, port, duration)
+            run_action(user_id, message, ip, port, duration, user_mode)
         else:
             bot.reply_to(message, "⚠️ *Oops!* Please provide the IP and port in the correct format: `<ip> <port>`.\n\n_This bot was made by Ibr._", parse_mode='Markdown')
 
@@ -548,17 +538,7 @@ def handle_message(message):
             stop_button = KeyboardButton('Stop Action')
             markup.add(stop_button)
 
-            # Respond to the user that the action is starting
-            bot.reply_to(message, (
-                f"🔧 *Got it! Starting action in Manual Mode...* 💥\n\n"
-                f"🌍 *Target IP:* `{ip}`\n"
-                f"🔌 *Port:* `{port}`\n"
-                f"⏳ *Duration:* `{duration} seconds`\n\n"
-                "Hang tight, action is being processed... ⚙️\n\n"
-                "_This bot was made by Ibr._"
-            ), parse_mode='Markdown', reply_markup=markup)
-
-            run_action(user_id, message, ip, port, duration)
+            run_action(user_id, message, ip, port, duration, user_mode)
         else:
             bot.reply_to(message, (
                 "⚠️ *Oops!* The format looks incorrect. Let's try again:\n"
@@ -601,38 +581,51 @@ def show_stop_action_button(message):
     #bot.send_message(message.chat.id, "🛑 *Press Stop Action to terminate your current action.*", reply_markup=markup, parse_mode='Markdown')
 
 
-def run_action(user_id, message, ip, port, duration):
+def run_action(user_id, message, ip, port, duration, user_mode):
     try:
-        #numbers = [200, 200, 210]
-        #thread_value = random.choice(numbers)
         thread_value = get_thread_value(user_id)
-        # Notify the user that the action started
-        bot.reply_to(message, f"🎉 *Socket value is {thread_value}*", parse_mode='Markdown')
-        # Log the action start
-        logging.info(f"User {user_id} started action on IP {ip}, Port {port}, Duration {duration}s")
-
-        # Build the full command to execute
-        full_command = f"./soulcrack {ip} {port} {duration} {thread_value}"
-
-        # Start the command as a non-blocking subprocess
+        
+        # Send initial message and get its message_id
+        sent_message = bot.send_message(
+            message.chat.id,
+            f"🔧 *Starting action in {user_mode} mode...* 💥\n\n"
+            f"🌍 *Target IP:* `{ip}`\n"
+            f"🔌 *Port:* `{port}`\n"
+            f"⏳ *Duration:* `{duration} seconds`\n\n"
+            f"💡 *Socket value:* `{thread_value}`\n\n"
+            "Hang tight, action is being processed... ⚙️\n\n"
+            "_This bot was made by Ibr._",
+            parse_mode='Markdown'
+        )
+        
+        # Start the process
+        full_command = f"./action {ip} {port} {duration} {thread_value}"
         process = subprocess.Popen(full_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
-        # Store the process and its details in the processes dict
-        processes[process.pid] = {
-            'user_id': user_id,
-            'message': message,
-            'ip': ip,
-            'port': port,
-            'duration': duration,
-            'start_time': datetime.now(),
-            'process': process
-        }
-        # Monitor the process status
-        check_process_status(message, process, ip, port, duration)
-
+        # Store process details
+        processes[user_id] = {'process': process}
+        
+        # Wait for process to complete
+        process.wait()
+        
+        # Update the same message after completion
+        bot.edit_message_text(
+            chat_id=message.chat.id,
+            message_id=sent_message.message_id,
+            text=(
+                f"✅ *Action completed successfully!* 🎉\n\n"
+                f"🌐 *Target IP:* `{ip}`\n"
+                f"🔌 *Port:* `{port}`\n"
+                f"⏱ *Duration:* `{duration} seconds`\n\n"
+                "💡 *Need more help?* Just send another request! 🤗\n\n"
+                "_This bot was made by Ibr._"
+            ),
+            parse_mode='Markdown'
+        )
     except Exception as e:
         logging.error(f"Error running action for user {user_id}: {str(e)}")
         bot.reply_to(message, "⚠️ *An error occurred while processing your request.*", parse_mode='Markdown')
+
 
 def check_process_status(message, process, ip, port, duration):
     # Monitor the process and notify upon completion
