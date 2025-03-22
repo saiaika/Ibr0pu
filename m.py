@@ -605,6 +605,8 @@ def show_stop_action_button(message):
 async def run_action(user_id, message, ip, port, duration, user_mode):
     try:
         thread_value = get_thread_value(user_id)
+        # Convert duration to an integer
+        duration = int(duration)  # Add this line to fix the issue
         
         sent_message = bot.send_message(
             message.chat.id,
@@ -664,6 +666,9 @@ async def run_action(user_id, message, ip, port, duration, user_mode):
             parse_mode="Markdown"
         )
 
+    except ValueError as e:
+        logging.error(f"❌ Invalid duration value for user {user_id}: {str(e)}")
+        bot.reply_to(message, f"⚠️ *Invalid duration provided.* Please enter a valid number.", parse_mode="Markdown")
     except Exception as e:
         logging.error(f"❌ Error running action for user {user_id}: {str(e)}")
         bot.reply_to(message, f"⚠️ *An error occurred while processing your request.*: {str(e)}", parse_mode="Markdown")
