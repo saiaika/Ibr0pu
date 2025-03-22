@@ -630,9 +630,8 @@ def handle_message(message):
             )
         else:
             bot.answer_callback_query(call.id, "No running action.")
-       else:
+     else:
         bot.answer_callback_query(call.id, "No active action to stop.")
-    
     return
 
     # Regex to match "<ip> <port> <duration>" for manual mode or "<ip> <port>" for auto mode
