@@ -597,29 +597,6 @@ def handle_setthread(message):
             parse_mode='Markdown'
         )
 
-# Stop action callback
-@bot.callback_query_handler(func=lambda call: call.data.startswith("stop"))
-def handle_stop_action(call):
-    user_id = int(call.data.split("_")[1])
-    if user_id in processes:
-        process_info = processes.get(user_id)
-        process = process_info['process']
-        if process and process.poll() is None:
-            process.terminate()
-            process.wait()
-            del processes[user_id]
-            bot.answer_callback_query(call.id, "Action stopped!")
-            bot.edit_message_text(
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                text="🛑 **Action Stopped Successfully!**",
-                parse_mode="Markdown"
-            )
-        else:
-            bot.answer_callback_query(call.id, "No running action.")
-    else:
-        bot.answer_callback_query(call.id, "No active action to stop.")
-
 # Main message handler
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
@@ -636,8 +613,27 @@ def handle_message(message):
     user_mode = user_modes.get(user_id, 'manual')  # Default to 'manual' if mode not set
 
     if text == 'stop all':
-        stop_all_actions(message)
-        return
+     user_id = int(call.data.split("_")[1])
+     if user_id in processes:
+        process_info = processes.get(user_id)
+        process = process_info['process']
+        if process and process.poll() is None:
+            process.terminate()
+            process.wait()
+            del processes[user_id]
+            bot.answer_callback_query(call.id, "Action stopped!")
+            bot.edit_message_text(
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                text="🛑 **Action Stopped Successfully!**",
+                parse_mode="Markdown"
+            )
+        else:
+            bot.answer_callback_query(call.id, "No running action.")
+       else:
+        bot.answer_callback_query(call.id, "No active action to stop.")
+    
+    return
 
     # Regex to match "<ip> <port> <duration>" for manual mode or "<ip> <port>" for auto mode
     auto_mode_pattern = re.compile(r"(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b)\s(\d{1,5})")
