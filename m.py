@@ -38,6 +38,9 @@ bot = telebot.TeleBot(TOKEN)
 # Timezone for Kolkata (GMT +5:30)
 kolkata_tz = pytz.timezone('Asia/Kolkata')
 
+# Time interval for auto-clearing (in seconds, e.g., 24 hours = 86400 seconds)
+HISTORY_CLEAR_INTERVAL = 3600     # 86400   24 hours and this for 1 hour
+
 # File to store authorizations
 AUTHORIZATION_FILE = 'authorizations.txt'
 
@@ -46,6 +49,9 @@ authorized_users = {}
 
 # List of authorized user IDs (admins)
 AUTHORIZED_USERS = [6800732852, 5113311276]
+
+# List of blocked ports
+BLOCKED_PORTS = [8700, 20000, 443, 17500, 9031, 20002, 20001]
 
 # Regex pattern to match the IP, port, and duration
 pattern = re.compile(r"(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b)\s(\d{1,5})\s(\d+)")
@@ -61,6 +67,8 @@ supporter_users = {}
 
 # Store processes and temporary data for each user
 processes = defaultdict(dict)
+
+start_time = datetime.now(pytz.utc)  # Add at top of script
 
 # Dictionary to track actions by user
 active_users = {}  # Format: {user_id: {"username": str, "action": str, "process": subprocess, "expire_time": datetime}}
@@ -80,7 +88,31 @@ def authorize_user(user_id, expire_time):
         },
         upsert=True
     )
+#History 
+def clear_user_history_automatically():
+    """Automatically clear the most recent 5 history entries for all users."""
+    now = datetime.now(kolkata_tz)
+    logging.info(f"Running automatic history clear at {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
+    # Get all unique user_ids from the actions collection
+    unique_users = actions_collection.distinct("user_id")
+
+    for user_id in unique_users:
+        # Find the user's most recent 5 actions
+        user_actions = actions_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(5)
+        action_ids = [action["_id"] for action in user_actions]
+
+        if action_ids:
+            # Delete the most recent 5 actions
+            result = actions_collection.delete_many({"_id": {"$in": action_ids}})
+            if result.deleted_count > 0:
+                logging.info(f"Auto-cleared {result.deleted_count} history entries for user {user_id}")
+                # Optionally notify the user (uncomment if desired)
+                # bot.send_message(user_id, f"🗑️ *Your last {result.deleted_count} actions were automatically cleared.*", parse_mode='Markdown')
+
+    # Schedule the next run
+    Timer(HISTORY_CLEAR_INTERVAL, clear_user_history_automatically).start()
+    
 # Save authorizations to MongoDB with Kolkata timezone handling
 def save_authorizations():
     for user_id, info in authorized_users.items():
@@ -233,9 +265,79 @@ def send_welcome(message):
         "🔹 Want to *stop* all ongoing actions? Just type:\n"
         "stop all\n\n"
         "🔐 *Important:* Only authorized users can use this bot in private chat. 😎\n\n"
+        "📚 Press /help for instructions \n\n"
         "🤖 _This bot was made by Ibr._"
     )
     bot.reply_to(message, welcome_text, parse_mode='Markdown', reply_markup=markup)
+
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    help_text = (
+        "📚 *Action Bot Help Guide* 📚\n\n"
+        "Here’s how to capture an *IP* and *Port* from *HTTP Canary* while playing *BGMI* to use with this bot! 🚀\n\n"
+        
+        "🔹 *Step-by-Step Instructions* 🔹\n"
+        "1️⃣ *Download HTTP Canary*:\n"
+        "   - Install *HTTP Canary* from the Google Play Store or a trusted source. 📲\n\n"
+        
+        "2️⃣ *Start HTTP Canary*:\n"
+        "   - Open the app and press the *Start* button (▶️) to begin capturing network traffic. 🌐\n\n"
+        
+        "3️⃣ *Launch BGMI*:\n"
+        "   - Open *Battlegrounds Mobile India* and go to the *Match Lobby*. 🎮\n"
+        "   - Wait until the timer shows before the match starts. ⏱️\n\n"
+        
+        "4️⃣ *Capture Traffic*:\n"
+        "   - Switch back to *HTTP Canary* quickly. ⚡\n"
+        "   - Look for *UDP* packets in the captured traffic (it’ll say 'UDP' in the protocol column). 📡\n\n"
+        
+        "5️⃣ *Find the IP and Port*:\n"
+        "   - Scroll through the UDP packets and find one with a port between *10,000* and *30,000* (5 digits, e.g., 12345). 🔍\n"
+        "   - The *IP address* will look like `192.168.x.x` or similar (e.g., `203.0.113.5`). Copy this IP. ✂️\n"
+        "   - Copy the *Port* number next to it (e.g., `14567`). ✍️\n\n"
+        
+        "6️⃣ *Use with the Bot*:\n"
+        "   - In *Manual Mode*: Send `<IP> <Port> <Duration>` (e.g., `203.0.113.5 14567 60`). 📩\n"
+        "   - In *Auto Mode*: Send `<IP> <Port>` (e.g., `203.0.113.5 14567`), and I’ll pick a random duration. 🤖\n\n"
+        
+        "🎯 *Example*:\n"
+        "   - Manual: `203.0.113.5 14567 60`\n"
+        "   - Auto: `203.0.113.5 14567`\n\n"
+        
+        "⚠️ *Important Notes*:\n"
+        "   - Ports like `8700, 20000, 443, 17500, 9031, 20002, 20001` are *blocked*. Use a port between *10,000-30,000* instead! 🚫\n"
+        "   - Make sure you’re authorized with `/auth` before using me! 🔐\n\n"
+        
+        "💡 *Need Help?* Just ask, and I’ll guide you! 😎\n\n"
+        "_This bot was made by Ibr._"
+    )
+    bot.reply_to(message, help_text, parse_mode='Markdown')
+
+@bot.message_handler(commands=['ping'])
+def ping_bot(message):
+    now = datetime.now(pytz.utc)
+    uptime = now - start_time
+    bot.reply_to(message, f"🏓 *Pong!* Bot is alive.\n⏰ *Uptime:* {str(uptime).split('.')[0]}", parse_mode='Markdown')
+
+@bot.message_handler(commands=['stats'])
+def show_stats(message):
+    user_id = message.from_user.id
+    if user_id not in AUTHORIZED_USERS:
+        bot.reply_to(message, "⛔ *Admins only!*", parse_mode='Markdown')
+        return
+    now = datetime.now(pytz.utc)
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    total_actions = actions_collection.count_documents({"timestamp": {"$gte": today}})
+    active_count = len(processes)
+    authorized_count = actions_collection.count_documents({"status": "authorized"})
+    stats = (
+        f"📊 *Bot Stats (as of {now.astimezone(kolkata_tz).strftime('%Y-%m-%d %H:%M:%S')})*\n\n"
+        f"👥 *Authorized Users:* {authorized_count}\n"
+        f"⚡ *Active Actions:* {active_count}\n"
+        f"📈 *Actions Today:* {total_actions}"
+    )
+    bot.reply_to(message, stats, parse_mode='Markdown')
+
 
 # Mode selection handler
 @bot.message_handler(func=lambda message: message.text in ['Manual Mode', 'Auto Mode'])
@@ -432,6 +534,18 @@ def confirm_broadcast(call):
 
     bot.send_message(chat_id, "✅ *Broadcast sent to all users!*")
 
+@bot.message_handler(commands=['history'])
+def show_history(message):
+    user_id = message.from_user.id
+    if user_id not in AUTHORIZED_USERS and not is_authorized(user_id):
+        bot.reply_to(message, "⛔ *You are not authorized!* Use /auth first.", parse_mode='Markdown')
+        return
+    history = actions_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(5)  # Last 5 actions
+    response = "📜 *Your Recent Actions:*\n\n"
+    for action in history:
+        ts = action['timestamp'].astimezone(kolkata_tz).strftime("%Y-%m-%d %H:%M:%S")
+        response += f"🌍 IP: `{action['ip']}` | 🔌 Port: `{action['port']}` | ⏳ {action['duration']}s | Mode: {action['mode']} | ⏰ {ts}\n"
+    bot.reply_to(message, response if history else "⚠️ *No action history found.*", parse_mode='Markdown')
 
 # Function to set or get the thread value
 def get_thread_value(user_id):
@@ -526,6 +640,9 @@ def handle_message(message):
             if not is_valid_port(port):
                 bot.reply_to(message, "❌ *Invalid Port!* Port must be between 1 and 65535.\n\n_This bot was made by Ibr._", parse_mode='Markdown')
                 return
+            if port in BLOCKED_PORTS:
+                bot.reply_to(message, f"⛔ *Port {port} is blocked!* Please use a different port.\n\n_This bot was made by Ibr._", parse_mode='Markdown')
+                return
 
             # Show the stop action button
             markup = ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
@@ -552,7 +669,10 @@ def handle_message(message):
             if not is_valid_duration(duration):
                 bot.reply_to(message, "❌ *Invalid Duration!* The duration must be between 1 and 600 seconds.\n\n_This bot was made by Ibr._", parse_mode='Markdown')
                 return
-
+            if port in BLOCKED_PORTS:
+                bot.reply_to(message, f"⛔ *Port {port} is blocked!* Please use a different port.\n\n_This bot was made by Ibr._", parse_mode='Markdown')
+                return
+                
             # Show the stop action button
             markup = ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
             stop_button = KeyboardButton('Stop Action')
@@ -650,7 +770,14 @@ async def run_action(user_id, message, ip, port, duration, user_mode):
 
         # Wait for process to complete
         stdout, stderr = await process.communicate()
-
+        actions_collection.insert_one({
+          "user_id": user_id,
+          "ip": ip,
+          "port": int(port),
+          "duration": duration,
+          "mode": user_mode,
+          "timestamp": datetime.now(pytz.utc)
+        })
         # Final update
         bot.edit_message_text(
             chat_id=message.chat.id,
@@ -737,6 +864,8 @@ if __name__ == '__main__':
     load_authorizations()
     # Start periodic expiration check when the bot starts
     check_expired_users()
+    # Start automatic history clearing
+    clear_user_history_automatically()
     try:
         bot.polling(none_stop=True)
     except Exception as e:
