@@ -627,11 +627,11 @@ async def run_action(user_id, message, ip, port, duration, user_mode):
         )
 
         processes[user_id] = {'process': process}
-
+        totalduration = int(duration)
         # Live progress updates
         while process.returncode is None:  # While process is running
-            await asyncio.sleep(5)  # Update every 5 seconds
-            duration -= 5
+            await asyncio.sleep(1)  # Update every 5 seconds
+            duration -= 1
             if duration > 0:
                 bot.edit_message_text(
                     chat_id=message.chat.id,
@@ -659,7 +659,7 @@ async def run_action(user_id, message, ip, port, duration, user_mode):
                 f"✅ *Action completed successfully!* 🎉\n\n"
                 f"🌐 *Target IP:* `{ip}`\n"
                 f"🔌 *Port:* `{port}`\n"
-                f"⏱ *Total Duration:* `{duration} seconds`\n"
+                f"⏱ *Total Duration:* `{totalduration} seconds`\n"
                 f"💡 *Socket Value:* `{thread_value}`\n\n"
                 "🔎 *Review results and take further actions if needed.*"
             ),
