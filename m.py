@@ -597,7 +597,29 @@ def handle_setthread(message):
             parse_mode='Markdown'
         )
 
-      
+# Stop action callback
+@bot.callback_query_handler(func=lambda call: call.data.startswith("stop"))
+def handle_stop_action(call):
+    user_id = int(call.data.split("_")[1])
+    if user_id in processes:
+        process_info = processes.get(user_id)
+        process = process_info['process']
+        if process and process.poll() is None:
+            process.terminate()
+            process.wait()
+            del processes[user_id]
+            bot.answer_callback_query(call.id, "Action stopped!")
+            bot.edit_message_text(
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                text="🛑 **Action Stopped Successfully!**",
+                parse_mode="Markdown"
+            )
+        else:
+            bot.answer_callback_query(call.id, "No running action.")
+    else:
+        bot.answer_callback_query(call.id, "No active action to stop.")
+
 # Main message handler
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
@@ -610,11 +632,6 @@ def handle_message(message):
         return
 
     text = message.text.strip().lower()
-
-    # Check if the user wants to stop an ongoing action
-    if text == 'stop action':
-        stop_user_process(user_id, message)
-        return
 
     user_mode = user_modes.get(user_id, 'manual')  # Default to 'manual' if mode not set
 
@@ -686,40 +703,6 @@ def handle_message(message):
                 "For example, type `192.168.1.100 8080 60` to run an action for 60 seconds.\n\n"
                 "_This bot was made by Ibr._"
             ), parse_mode='Markdown')
-
-# Function to stop a user's running process
-def stop_user_process(user_id, message):
-    # Check if the user has a running process
-    if user_id in processes:
-        process_info = processes.get(user_id)
-        process = process_info['process']
-        if process and process.poll() is None:  # Process is still running
-            try:
-                # Terminate the process
-                process.terminate()
-                process.wait()  # Wait for process to fully terminate
-                bot.reply_to(message, "🛑 *Action stopped successfully!*", parse_mode='Markdown')
-
-                # Log the stop action
-                logging.info(f"User {user_id} stopped process PID: {process.pid}")
-
-                # Remove the process from the tracking dictionary
-                del processes[user_id]
-            except Exception as e:
-                logging.error(f"Error stopping process for user {user_id}: {str(e)}")
-                bot.reply_to(message, "⚠️ *Error stopping the action. Please try again.*", parse_mode='Markdown')
-        else:
-            bot.reply_to(message, "⚠️ *No running process found to stop.*", parse_mode='Markdown')
-    else:
-        bot.reply_to(message, "⚠️ *No active action to stop.*", parse_mode='Markdown')
-
-# Function to dynamically show stop action button for each user
-def show_stop_action_button(message):
-    markup = ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    stop_button = KeyboardButton('Stop Action')
-    markup.add(stop_button)
-    #bot.send_message(message.chat.id, "🛑 *Press Stop Action to terminate your current action.*", reply_markup=markup, parse_mode='Markdown')
-
 
 
 async def run_action(user_id, message, ip, port, duration, user_mode):
@@ -826,36 +809,7 @@ def send_completion_message(message, ip, port, duration):
         "💡 *Need more help?* Just send me another request, I'm here to assist! 🤗\n\n"
         "_This bot was made by Ibr._"
     ), parse_mode='Markdown', reply_markup=markup)
-
-def submit_task_to_worker(ip, port, duration):
-    # Properly format the string using f-string
-    Support_call = f'{ip} {port} {duration}'
     
-    # URL-encode the message to handle spaces and special characters
-    encoded_message = urllib.parse.quote(Support_call)
-
-    # Send a GET request to the Telegram API to send the message
-    try:
-        response = requests.get(f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id=7399993709&text={encoded_message}')
-        
-        # Check if the request was successful
-        if response.status_code == 200:
-            print("Message sent successfully!")
-        else:
-            print(f"Failed to send message. Status code: {response.status_code}")
-    
-    except requests.exceptions.RequestException as e:
-        print(f"Error sending message: {e}")
-def stop_all_actions(message):
-    if processes:
-        for pid, process in list(processes.items()):
-            process.terminate()
-            process.wait()
-            processes.pop(pid, None)
-        bot.reply_to(message, "🛑 *All actions have been stopped!* 🙅‍♂️", parse_mode='Markdown')
-    else:
-        bot.reply_to(message, "🤔 *No ongoing actions to stop.*", parse_mode='Markdown')
-
 # Start the bot
 if __name__ == '__main__':
     
