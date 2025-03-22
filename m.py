@@ -666,7 +666,7 @@ async def run_action(user_id, message, ip, port, duration, user_mode):
 
     except Exception as e:
         logging.error(f"❌ Error running action for user {user_id}: {str(e)}")
-        bot.reply_to(message, "⚠️ *An error occurred while processing your request.*: {str(e)}", parse_mode="Markdown")
+        bot.reply_to(message, f"⚠️ *An error occurred while processing your request.*: {str(e)}", parse_mode="Markdown")
 
 def check_process_status(message, process, ip, port, duration):
     # Monitor the process and notify upon completion
