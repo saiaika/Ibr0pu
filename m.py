@@ -7,13 +7,14 @@ import time
 import ipaddress
 import logging
 import random
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InputFile
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime, timedelta
 import pytz
 import requests
 from collections import defaultdict
 from pymongo import MongoClient
-
+import asyncio
+import threading
 
 # MongoDB setup
 MONGO_URI = "mongodb+srv://lm6000k:IBRSupreme@ibrdata.uo83r.mongodb.net/"
@@ -28,7 +29,7 @@ logging.basicConfig(filename='bot_actions.log', level=logging.INFO,
                     format='%(asctime)s - %(message)s')
 
 # Initialize the bot with the token from environment variables
-TOKEN = "7603189852:AAHUZMPEIObeNoit8T7-KmFZ0ofcwFr69PA"
+TOKEN = "7267969157:AAFBW9fqZYa1kMnAB9CerIxWQnJ0-6c7Wns"
 if not TOKEN:
     raise ValueError("Please set your bot token in the environment variables!")
 
@@ -402,16 +403,35 @@ def request_authorization(message):
 
 @bot.message_handler(commands=['yell'])
 def handle_yell(message):
-    user_id = message.from_user.id
-    if user_id in AUTHORIZED_USERS:
-        broadcast_message = message.text.replace("/yell", "", 1).strip()
-        if broadcast_message:
-            broadcast_message_to_all(broadcast_message)
-            bot.reply_to(message, "Message broadcasted successfully.")
-        else:
-            bot.reply_to(message, "Please provide a message to broadcast.")
-    else:
-        bot.reply_to(message, "You are not authorized to use this command.")
+    if message.from_user.id not in AUTHORIZED_USERS:
+        bot.reply_to(message, "⛔ You are not authorized to use this command.", parse_mode="Markdown")
+        return
+
+    broadcast_message = message.text.replace("/yell", "").strip()
+    if not broadcast_message:
+        bot.reply_to(message, "❌ *Please provide a message to broadcast.*", parse_mode="Markdown")
+        return
+
+    keyboard = InlineKeyboardMarkup()
+    confirm_button = InlineKeyboardButton("📢 Confirm Broadcast", callback_data=f"confirm_broadcast_{message.chat.id}")
+    keyboard.add(confirm_button)
+
+    bot.reply_to(message, f"📝 *Broadcast Preview:*\n\n{broadcast_message}", reply_markup=keyboard, parse_mode="Markdown")
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("confirm_broadcast_"))
+def confirm_broadcast(call):
+    chat_id = int(call.data.split("_")[-1])
+    broadcast_message = call.message.text.replace("📝 *Broadcast Preview:*\n\n", "")
+
+    all_users = actions_collection.find({}, {"user_id": 1})
+    for user in all_users:
+        try:
+            bot.send_message(user['user_id'], broadcast_message)
+        except:
+            pass
+
+    bot.send_message(chat_id, "✅ *Broadcast sent to all users!*")
+
 
 # Function to set or get the thread value
 def get_thread_value(user_id):
@@ -497,7 +517,7 @@ def handle_message(message):
         match = auto_mode_pattern.match(text)
         if match:
             ip, port = match.groups()
-            duration = random.randint(700, 900)  # Random duration for auto mode
+            duration = random.randint(80, 240)  # Random duration for auto mode
 
             # Validate IP and Port
             if not is_valid_ip(ip):
@@ -512,7 +532,7 @@ def handle_message(message):
             stop_button = KeyboardButton('Stop Action')
             markup.add(stop_button)
 
-            run_action(user_id, message, ip, port, duration, user_mode)
+            asyncio.run(run_action(user_id, message, ip, port, duration, user_mode))
         else:
             bot.reply_to(message, "⚠️ *Oops!* Please provide the IP and port in the correct format: `<ip> <port>`.\n\n_This bot was made by Ibr._", parse_mode='Markdown')
 
@@ -538,7 +558,7 @@ def handle_message(message):
             stop_button = KeyboardButton('Stop Action')
             markup.add(stop_button)
 
-            run_action(user_id, message, ip, port, duration, user_mode)
+            asyncio.run(run_action(user_id, message, ip, port, duration, user_mode))
         else:
             bot.reply_to(message, (
                 "⚠️ *Oops!* The format looks incorrect. Let's try again:\n"
@@ -581,34 +601,55 @@ def show_stop_action_button(message):
     #bot.send_message(message.chat.id, "🛑 *Press Stop Action to terminate your current action.*", reply_markup=markup, parse_mode='Markdown')
 
 
-def run_action(user_id, message, ip, port, duration, user_mode):
+
+async def run_action(user_id, message, ip, port, duration, user_mode):
     try:
         thread_value = get_thread_value(user_id)
         
-        # Send initial message and get its message_id
         sent_message = bot.send_message(
             message.chat.id,
-            f"🔧 *Starting action in {user_mode} mode...* 💥\n\n"
+            f"🔧 *Initializing action in {user_mode.capitalize()} Mode...* 💥\n\n"
             f"🌍 *Target IP:* `{ip}`\n"
             f"🔌 *Port:* `{port}`\n"
-            f"⏳ *Duration:* `{duration} seconds`\n\n"
-            f"💡 *Socket value:* `{thread_value}`\n\n"
-            "Hang tight, action is being processed... ⚙️\n\n"
-            "_This bot was made by Ibr._",
-            parse_mode='Markdown'
+            f"⏳ *Duration:* `{duration} seconds`\n"
+            f"💡 *Socket Value:* `{thread_value}`\n\n"
+            "⚙️ *Processing request... Please wait.*",
+            parse_mode="Markdown"
         )
-        
-        # Start the process
-        full_command = f"./action {ip} {port} {duration} {thread_value}"
-        process = subprocess.Popen(full_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        # Store process details
+
+        # Run subprocess asynchronously
+        process = await asyncio.create_subprocess_exec(
+            "./action", ip, port, str(duration), str(thread_value),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
         processes[user_id] = {'process': process}
-        
+
+        # Live progress updates
+        while process.returncode is None:  # While process is running
+            await asyncio.sleep(5)  # Update every 5 seconds
+            duration -= 5
+            if duration > 0:
+                bot.edit_message_text(
+                    chat_id=message.chat.id,
+                    message_id=sent_message.message_id,
+                    text=(
+                        f"⚡ *Action in progress...* `{duration} seconds left`\n\n"
+                        f"🌍 *Target IP:* `{ip}`\n"
+                        f"🔌 *Port:* `{port}`\n"
+                        f"💡 *Socket Value:* `{thread_value}`\n\n"
+                        "🔄 *Executing... Please wait!*"
+                    ),
+                    parse_mode="Markdown"
+                )
+            else:
+                break
+
         # Wait for process to complete
-        process.wait()
-        
-        # Update the same message after completion
+        stdout, stderr = await process.communicate()
+
+        # Final update
         bot.edit_message_text(
             chat_id=message.chat.id,
             message_id=sent_message.message_id,
@@ -616,16 +657,16 @@ def run_action(user_id, message, ip, port, duration, user_mode):
                 f"✅ *Action completed successfully!* 🎉\n\n"
                 f"🌐 *Target IP:* `{ip}`\n"
                 f"🔌 *Port:* `{port}`\n"
-                f"⏱ *Duration:* `{duration} seconds`\n\n"
-                "💡 *Need more help?* Just send another request! 🤗\n\n"
-                "_This bot was made by Ibr._"
+                f"⏱ *Total Duration:* `{duration} seconds`\n"
+                f"💡 *Socket Value:* `{thread_value}`\n\n"
+                "🔎 *Review results and take further actions if needed.*"
             ),
-            parse_mode='Markdown'
+            parse_mode="Markdown"
         )
-    except Exception as e:
-        logging.error(f"Error running action for user {user_id}: {str(e)}")
-        bot.reply_to(message, "⚠️ *An error occurred while processing your request.*", parse_mode='Markdown')
 
+    except Exception as e:
+        logging.error(f"❌ Error running action for user {user_id}: {str(e)}")
+        bot.reply_to(message, "⚠️ *An error occurred while processing your request.*", parse_mode="Markdown")
 
 def check_process_status(message, process, ip, port, duration):
     # Monitor the process and notify upon completion
