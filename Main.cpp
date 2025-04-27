@@ -1,6 +1,7 @@
 // ========================================================================================
 // IBR - Professional Gaming Enhancement Suite
 // Modern C++ ImGui-based Interface for Android
+// Version: 4.2.1 (2025-04-27)
 // ========================================================================================
 
 #include <random>
@@ -35,8 +36,11 @@ void RenderAimButton(ImDrawList* draw);
 void RenderBulletTrackButton(ImDrawList* draw);
 void RenderLoginScreen();
 
+// Change this:
+
 // Declare missing variables
 bool isLogin = false; // Global login state
+ImU32 uniqueColor = IM_COL32(255, 0, 0, 255); // Default unique color
 
 // ========================================================================================
 // THEME CONFIGURATION & ANIMATION CONSTANTS
@@ -241,50 +245,51 @@ namespace UIComponents {
         return changed;
     }
     
-	// Add this function to your UIComponents namespace
-bool ToggleSwitchFloat(const char* label, float* value) {
-    // Convert float to bool for the toggle display
-    bool enabled = (*value > 0.0f);
-    
-    // Store previous state to detect changes
-    bool prevState = enabled;
-    
-    // Reuse the existing toggle switch UI
-    ImGuiStyle& style = ImGui::GetStyle();
-    ImVec2 pos = ImGui::GetCursorScreenPos();
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    
-    float height = ImGui::GetFrameHeight();
-    float width = height * 1.55f;
-    float radius = height * 0.50f;
-    
-    ImGui::InvisibleButton(label, ImVec2(width, height));
-    bool changed = false;
-    
-    if (ImGui::IsItemClicked()) {
-        // Toggle the state
-        enabled = !enabled;
-        // Update the float value based on the new toggle state
-        *value = enabled ? 1.0f : 0.0f;
-        changed = true;
+	// Toggle switch for float values
+    bool ToggleSwitchFloat(const char* label, float* value) {
+        // Convert float to bool for the toggle display
+        bool enabled = (*value > 0.0f);
+        
+        // Store previous state to detect changes
+        bool prevState = enabled;
+        
+        // Reuse the existing toggle switch UI
+        ImGuiStyle& style = ImGui::GetStyle();
+        ImVec2 pos = ImGui::GetCursorScreenPos();
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        
+        float height = ImGui::GetFrameHeight();
+        float width = height * 1.55f;
+        float radius = height * 0.50f;
+        
+        ImGui::InvisibleButton(label, ImVec2(width, height));
+        bool changed = false;
+        
+        if (ImGui::IsItemClicked()) {
+            // Toggle the state
+            enabled = !enabled;
+            // Update the float value based on the new toggle state
+            *value = enabled ? 1.0f : 0.0f;
+            changed = true;
+        }
+        
+        // Track background
+        ImU32 bg_col = ImGui::GetColorU32(enabled ? ImVec4(0.2f, 0.6f, 1.0f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+        draw_list->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), bg_col, height * 0.5f);
+        
+        // Knob
+        float t = enabled ? 1.0f : 0.0f;
+        float knob_x = ImLerp(pos.x + radius, pos.x + width - radius, t);
+        ImU32 knob_col = ImGui::GetColorU32(enabled ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+        draw_list->AddCircleFilled(ImVec2(knob_x, pos.y + radius), radius - 1.5f, knob_col);
+        
+        // Label
+        ImGui::SameLine();
+        ImGui::Text("%s", label);
+        
+        return changed;
     }
     
-    // Track background
-    ImU32 bg_col = ImGui::GetColorU32(enabled ? ImVec4(0.2f, 0.6f, 1.0f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
-    draw_list->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), bg_col, height * 0.5f);
-    
-    // Knob
-    float t = enabled ? 1.0f : 0.0f;
-    float knob_x = ImLerp(pos.x + radius, pos.x + width - radius, t);
-    ImU32 knob_col = ImGui::GetColorU32(enabled ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-    draw_list->AddCircleFilled(ImVec2(knob_x, pos.y + radius), radius - 1.5f, knob_col);
-    
-    // Label
-    ImGui::SameLine();
-    ImGui::Text("%s", label);
-    
-    return changed;
-}
     // Card with heading and content
     void BeginCard(const char* title, ImU32 headerColor = Theme::Colors::Primary) {
         ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, Theme::Dimensions::BorderRadius);
@@ -625,10 +630,16 @@ public:
             );
             
             ImU32 bgColor = IM_COL32(40, 40, 40, (int)(200 * alpha));
-            ImU32 borderColor = ImColor((int)(ImGui::ColorConvertU32ToFloat4(it->color).x * 255 * alpha),
-                                       (int)(ImGui::ColorConvertU32ToFloat4(it->color).y * 255 * alpha),
-                                       (int)(ImGui::ColorConvertU32ToFloat4(it->color).z * 255 * alpha),
-                                       (int)(ImGui::ColorConvertU32ToFloat4(it->color).w * 255 * alpha));
+            
+            // Get RGB components from the color
+            ImVec4 borderColorVec = ImGui::ColorConvertU32ToFloat4(it->color);
+            ImU32 borderColor = IM_COL32(
+                (int)(borderColorVec.x * 255 * alpha),
+                (int)(borderColorVec.y * 255 * alpha),
+                (int)(borderColorVec.z * 255 * alpha),
+                (int)(borderColorVec.w * 255 * alpha)
+            );
+            
             ImU32 textColor = IM_COL32(255, 255, 255, (int)(255 * alpha));
             
             draw->AddRectFilled(rectMin, rectMax, bgColor, 8.0f);
@@ -885,13 +896,13 @@ public:
         ImGui::SameLine();
         static const char *targets[] = {"HEAD", "BODY"};
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        ImGui::Combo("##Target", (int *)&Cheat::AimBot::Target, targets, 2, -1);
+        ImGui::Combo("##Target", (int *)&Cheat::AimBot::Target, targets, 2);
         
         ImGui::Text("Trigger Method:");
         ImGui::SameLine();
         static const char *triggers[] = {"None", "Shooting", "Scoping", "Both", "Any"};
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        ImGui::Combo("##Trigger", (int *)&Cheat::AimBot::Trigger, triggers, 5, -1);
+        ImGui::Combo("##Trigger", (int *)&Cheat::AimBot::Trigger, triggers, 5);
         
         ImGui::Spacing();
         UIComponents::EnhancedSlider("FOV Radius", &Cheat::AimBot::Radius, 0.0f, 1000.0f, "%.0f");
@@ -1138,19 +1149,24 @@ LoginState gLoginState;
 // MAIN DRAWING FUNCTIONS
 // ========================================================================================
 
+// Helper function to extract color components
+inline int GetR(ImU32 color) { return (color >> IM_COL32_R_SHIFT) & 0xFF; }
+inline int GetG(ImU32 color) { return (color >> IM_COL32_G_SHIFT) & 0xFF; }
+inline int GetB(ImU32 color) { return (color >> IM_COL32_B_SHIFT) & 0xFF; }
+
 // Draw in-game ESP elements
 void DrawESP(ImDrawList* draw) {
     // Display branding text
     float brandingSize = density / 19.0f;
-    ESP::DrawStrokeText(draw, brandingSize, ImVec2(density / 19.0f, 50), Theme::Colors::Primary, "NxT VIP");
+    ESP::DrawStrokeText(draw, brandingSize, ImVec2(density / 19.0f, 50), Theme::Colors::Primary, "IBR Pro");
     
     // Display purchase information (with shadow effect for better visibility)
     float purchaseSize = density / 10.0f;
-    ESP::DrawStrokeText(draw, purchaseSize, ImVec2(density / 10.0f, 650), Theme::Colors::TextPrimary, "For Buy Key -> @NEXXA_CHEAT");
-    ESP::DrawStrokeText(draw, purchaseSize, ImVec2(density / 10.0f, 670), Theme::Colors::TextPrimary, "Channel -> @NEXXA_CHEATZ");
+    ESP::DrawStrokeText(draw, purchaseSize, ImVec2(density / 10.0f, 650), Theme::Colors::TextPrimary, "Premium Gaming Enhancement Suite");
+    ESP::DrawStrokeText(draw, purchaseSize, ImVec2(density / 10.0f, 670), Theme::Colors::TextPrimary, "By saiaika - 2025-04-27");
     
     // Display telegram channel info with outline
-    std::string credit = OBFUSCATE("[0] Telegram Channel -> NEXXA ALL SRC+BYPASS");
+    std::string credit = OBFUSCATE("[0] Telegram Channel -> IBR Premium Upgrade");
     auto textSize = ImGui::CalcTextSize(credit.c_str());
     float creditSize = density / 14.0f;
     
@@ -1197,12 +1213,48 @@ void DrawESP(ImDrawList* draw) {
             }
         }
         
-        // Player processing code omitted for brevity...
-        // This would include collision angles, iPad view, bullet tracking, etc.
-
+        // Process player features if local player found
+        if (localPlayer) {
+            // Process collision angles for improved hit detection
+            if (localPlayer->PartHitComponent) {
+                auto ConfigCollisionDistSqAngles = localPlayer->PartHitComponent->ConfigCollisionDistSqAngles;
+                for (int j = 0; j < ConfigCollisionDistSqAngles.Num(); j++) {
+                    ConfigCollisionDistSqAngles[j].Angle = 180.0f; // Maximum angle
+                }
+                localPlayer->PartHitComponent->ConfigCollisionDistSqAngles = ConfigCollisionDistSqAngles;
+            }
+            
+            // Apply iPad view if enabled
+            if (Cheat::Memory::IPadView) {
+                localPlayer->ThirdPersonCameraComponent->SetFieldOfView(Cheat::Memory::WideViewRange);
+            }
+            
+            // Draw aim mode indicator
+            if (Cheat::BulletTrack::Target == Cheat::EAimTarget::Head) {
+                ESP::DrawStrokeText(
+                    draw,
+                    density / 22.0f,
+                    ImVec2(glWidth / 2 - 107.0f, 540.0f),
+                    Theme::Colors::Success,
+                    "Aim->Mode : Head"
+                );
+            } else {
+                ESP::DrawStrokeText(
+                    draw,
+                    density / 22.0f,
+                    ImVec2(glWidth / 2 - 107.0f, 540.0f),
+                    Theme::Colors::Info,
+                    "Aim->Mode : Body"
+                );
+            }
+        }
+        
         // Update global pointers for use in other systems
         g_LocalController = localController;
         g_LocalPlayer = localPlayer;
+        
+        // Process enemies and display ESP
+        // This would be expanded with the full ESP implementation
     }
 }
 
@@ -1360,7 +1412,7 @@ EGLBoolean _eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     
     // Create window title with FPS counter
     char buf[128];
-    sprintf(buf, (OBFUSCATE("NxT Elite v4.2.0 • %.1f FPS ###MainWindow")), io.Framerate);
+    sprintf(buf, (OBFUSCATE("IBR Premium v4.2.1 • %.1f FPS ###MainWindow")), io.Framerate);
     
     // Begin main window
     if (ImGui::Begin(buf, nullptr, ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoSavedSettings)) {
@@ -1412,7 +1464,7 @@ void RenderLoginScreen() {
     ImGui::BeginChild("##LogoArea", ImVec2(contentWidth, 120), true, ImGuiWindowFlags_NoScrollbar);
     {
         // Center logo text
-        const char* logoText = "NxT Elite";
+        const char* logoText = "IBR Premium";
         ImVec2 textSize = ImGui::CalcTextSize(logoText);
         ImGui::SetCursorPosX((contentWidth - textSize.x) * 0.5f);
         ImGui::SetCursorPosY(30);
@@ -1511,17 +1563,18 @@ void RenderLoginScreen() {
     {
         ImGui::Spacing();
         
-        const char* contactText = "For licenses contact:";
+        const char* contactText = "Created by saiaika";
         ImVec2 textSize = ImGui::CalcTextSize(contactText);
         ImGui::SetCursorPosX((contentWidth - textSize.x) * 0.5f);
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "%s", contactText);
         
         ImGui::Spacing();
         
-        const char* telegramText = "@NEXXA_CHEAT on Telegram";
-        textSize = ImGui::CalcTextSize(telegramText);
+        char dateText[64];
+        snprintf(dateText, sizeof(dateText), "Version 4.2.1 (2025-04-27)");
+        textSize = ImGui::CalcTextSize(dateText);
         ImGui::SetCursorPosX((contentWidth - textSize.x) * 0.5f);
-        ImGui::TextColored(ImVec4(0.4f, 0.6f, 0.9f, 1.0f), "%s", telegramText);
+        ImGui::TextColored(ImVec4(0.4f, 0.6f, 0.9f, 1.0f), "%s", dateText);
     }
     ImGui::EndChild();
 }
@@ -1614,40 +1667,18 @@ void *main_thread(void *) {
 }
 
 // Entry point - constructor is called when library is loaded
-__attribute__((constructor)) 
-void _init() {
+__attribute__((constructor)) void _init() {
     // IBR Banner - Logo display on initialization
     LOGI(OBFUSCATE("╔═══════════════════════════════════════════╗"));
-    LOGI(OBFUSCATE("║       IBR PREMIUM GAME BYPASS V3.7        ║"));
-    LOGI(OBFUSCATE("║      PUBGM/BGMI ULTIMATE PROTECTION       ║"));
+    LOGI(OBFUSCATE("║       IBR PREMIUM GAME BYPASS v4.2.1      ║"));
+    LOGI(OBFUSCATE("║             BY SAIAIKA 2025               ║"));
     LOGI(OBFUSCATE("╚═══════════════════════════════════════════╝"));
 
-    // Thread variables
-    pthread_t t, anogs_t, ue4_t, aim_t, banfix_t, ipad_t;
-    
-    // Create core protection threads
-    pthread_create(&anogs_t, NULL, anogs_thread, NULL);
-    pthread_create(&ue4_t, NULL, ue4_thread, NULL);
-    
-    // Create specialized bypass threads
-    pthread_create(&aim_t, NULL, IBR_AimBypassThread, NULL);
-    pthread_create(&banfix_t, NULL, IBR_BanFixThread, NULL);
-    
-    // Create original threads (from your code)
+    // Create main thread
+    pthread_t t;
     pthread_create(&t, NULL, main_thread, NULL);
+    
+    // Create iPad view thread
+    pthread_t ipad_t;
     pthread_create(&ipad_t, NULL, ipad_thread, NULL);
-  
-    // Apply immediate patches that don't need a separate thread
-   HOOK_LIB_NO_ORIG("libanogs.so", "0x15677C", hook_strlen); // IBR: offline ban fix
-    
-    // Engine protection patches
-    PATCH_LIB("libUE4.so", "0x5EBFA64", "00 00 80 D2 C0 03 5F D6"); // IBR: Network check bypass
-    PATCH_LIB("libUE4.so", "0x698CCA0", "00 00 80 D2 C0 03 5F D6"); // IBR: Detection callback bypass
-    
-    // Apply anti-report patches
-    PATCH_LIB("libCrashSight.so", "0x2C34C", "C0 03 5F D6"); // IBR: Anti-report
-    PATCH_LIB("libCrashSight.so", "0x38C10", "C0 03 5F D6"); // IBR: Anti-report
-   
-    LOGI(OBFUSCATE("IBR | Protection system initialization complete"));
-    LOGI(OBFUSCATE("IBR | All systems running..."));
 }
