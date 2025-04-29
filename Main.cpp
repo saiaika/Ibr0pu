@@ -1,9 +1,9 @@
-my bypass.h i want updat and add bypaas ->/**
+/**
  * ╔══════════════════════════════════════════════════════════╗
- * ║                                                                     ║
- * ║   Bypass by IBR                                                     ║
- * ║   Allah hu akbar, Made with 💖 by IBR                               ║
- * ║                                                                     ║
+ * ║                                                          ║
+ * ║   Bypass by IBR                                          ║
+ * ║   Allah hu akbar, Made with 💖 by IBR                    ║
+ * ║                                                          ║
  * ╚══════════════════════════════════════════════════════════╝
  */
 
@@ -34,7 +34,7 @@ my bypass.h i want updat and add bypaas ->/**
 // █ Custom Includes - Allah hu akbar, Made with 💖 by IBR
 // ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
 #include "Includes/Logger.h"
-//#include "Includes/obfuscate.h"
+#include "Includes/obfuscate.h"
 #include "Includes/Utils.h"
 #include "KittyMemory/MemoryPatch.h"
 #include "Includes/Macros.h"
@@ -177,6 +177,17 @@ void *anogs_thread(void *) {
     PATCH_LIB("libanogs.so", "0x27A2D8", "00 00 80 D2 C0 03 5F D6");
     PATCH_LIB("libanogs.so", "0x27A5B3", "00 00 80 D2 C0 03 5F D6");
     
+    // Apply new XELAHOT-CHEAT bypass patches
+    PATCH_LIB("libanogs.so", "0x36699A", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x366926", "00 00 A0 E3 1E FF 2F E1");
+    
+    // GL KR 32-bit Report block patches
+    PATCH_LIB("libanogs.so", "0x379398", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x379492", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x379334", "00 00 A0 E3 1E FF 2F E1"); // TDM report block
+    PATCH_LIB("libanogs.so", "0x38BB5E", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x38BA6C", "00 00 A0 E3 1E FF 2F E1");
+
     return NULL;
 }
 
@@ -506,6 +517,12 @@ void *__fastcall sub_20340(int a1, int a2, int a3, int a4, int a5, int a6) {
     return result;
 }
 
+// 30 Day Ban Fix Hook - New for 32-bit - Allah hu akbar, Made with 💖 by IBR
+int __fastcall sub_3797BC(int a1, unsigned int a2, int its_Halley) {
+    // Return success to bypass the 30-day violation check
+    return 0;
+}
+
 // Sub_1A301C Function - Allah hu akbar, Made with 💖 by IBR
 int __fastcall sub_1A301C(int a1, int a2, int a3) {
     // Allah hu akbar, Made with 💖 by IBR
@@ -718,6 +735,18 @@ __int64 __fastcall Hooked_sub_3721D4(__int64 a1, __int64 a2, char a3)
     return result;  
 }
 
+// XELAHOT-CHEAT Function - Allah hu akbar, Made with 💖 by IBR
+int __fastcall sub_36699A(int a1) {
+    // Return success to bypass detection 
+    return 1;
+}
+
+// Add new sub_15F4BC function for 32-bit - Allah hu akbar, Made with 💖 by IBR
+void __fastcall sub_15F4BC(int a1, int a2) {
+    // Bypass function
+    return;
+}
+
 // ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 // █ Ban Fix Functions - Allah hu akbar, Made with 💖 by IBR
 // ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
@@ -783,6 +812,12 @@ void applyAllPatches() {
     // Misc Patches - Allah hu akbar, Made with 💖 by IBR
     PATCH_LIB("libanogs.so", "0x1566D8", "00 00 80 D2 C0 03 5F D6");
     PATCH_LIB("libanogs.so", "0x3171EE", "00 00 A0 E3 1E FF 2F E1");
+    
+    // New Patches for 3.7 32-bit - Allah hu akbar, Made with 💖 by IBR
+    // BGMI + GLOBAL 32-bit Monitor Fixes
+    PATCH_LIB("libanogs.so", "0x379398", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x379492", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x379334", "00 00 A0 E3 1E FF 2F E1"); // TDM report block
 }
 
 // ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -806,7 +841,7 @@ void setupHooks() {
     HOOK_LIB("libanogs.so", "0x155274", hsub_1EB7BC, osub_1EB7BC);
     HOOK_LIB("libanogs.so", "0x157FB4", hsub_1EB7BC, osub_1EB7BC);
     HOOK_LIB("libanogs.so", "0x4A2DD4", hsub_1EB7BC, osub_1EB7BC);
-    HOOK_LIB("libanogs.so", "0x1D90D0", hsub_1EB7BC, osub_1EB7BC);
+        HOOK_LIB("libanogs.so", "0x1D90D0", hsub_1EB7BC, osub_1EB7BC);
     
     // No Origin Hooks
     HOOK_LIB_NO_ORIG("libanogs.so", "0x6F7F4", hstrstr);
@@ -815,6 +850,11 @@ void setupHooks() {
     HOOK_LIB_NO_ORIG("libhdmpve.so", "0x5BA98", sub_5BA98);
     HOOK_LIB_NO_ORIG("libanogs.so", "0x20340", sub_20340);
     HOOK_LIB_NO_ORIG("libanogs.so", "0x27E2A8", sub_27E2A8);
+    
+    // New hooks for 30-day and 1-day fix - BGMI + GLOBAL 32bit
+    HOOK_LIB_NO_ORIG("libanogs.so", "0x3797BC", sub_3797BC);
+    HOOK_LIB_NO_ORIG("libanogs.so", "0x15F4BC", sub_15F4BC);
+    HOOK_LIB_NO_ORIG("libanogs.so", "0x36699A", sub_36699A);
 }
 
 // Library Initialization - Allah hu akbar, Made with 💖 by IBR
@@ -835,6 +875,21 @@ void lib_main() {
     
     // Setup all hooks
     setupHooks();
+    
+    // Apply XELAHOT-CHEAT special patches
+    PATCH_LIB("libanogs.so", "0x36699A", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x366926", "00 00 A0 E3 1E FF 2F E1");
+    
+    // Apply Report block 32-bit patches
+    PATCH_LIB("libanogs.so", "0x379398", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x379492", "00 00 A0 E3 1E FF 2F E1");
+    
+    // Apply TDM report block for 32-bit
+    PATCH_LIB("libanogs.so", "0x379334", "00 00 A0 E3 1E FF 2F E1");
+    
+    // Apply GL KR 32-bit Report block patches
+    PATCH_LIB("libanogs.so", "0x38BB5E", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x38BA6C", "00 00 A0 E3 1E FF 2F E1");
     
     LOGI("▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄");
     LOGI("█ All hooks and patches applied!      █");
@@ -897,6 +952,14 @@ namespace BanFixes {
         // Allah hu akbar, Made with 💖 by IBR
         PATCH_LIB("libanogs.so", "0x8E6E4", "00 20 70 47");
         PATCH_LIB("libanogs.so", "0x3672CC", "00 00 80 D2 C0 03 5F D6");
+        // New 1-day fix for 32-bit from XELAHOT-CHEAT
+        PATCH_LIB("libanogs.so", "0x366926", "00 00 A0 E3 1E FF 2F E1");
+    }
+    
+    // Fix for 30-day bans - ADDED FROM XELAHOT-CHEAT
+    void apply30DayFix() {
+        // Hook the monitor function in BGMI 32-bit
+        HOOK_LIB_NO_ORIG("libanogs.so", "0x3797BC", sub_3797BC);
     }
     
     // Fix for offline bans - Allah hu akbar, Made with 💖 by IBR
@@ -927,6 +990,7 @@ namespace BanFixes {
         // Allah hu akbar, Made with 💖 by IBR
         apply10YearFix();
         apply1DayFix();
+        apply30DayFix();  // Added new 30-day fix
         applyOfflineFix();
         applyStructuredBanFix();
         applyOnlineBanFix();
@@ -946,141 +1010,24 @@ void blockAnogsLoading() {
 // Block report system - Allah hu akbar, Made with 💖 by IBR
 void blockReportSystem() {
     // Allah hu akbar, Made with 💖 by IBR
+    // CrashSight blocks - 64-bit
     PATCH_LIB("libCrashSight.so", "0x2C34C", "C0 03 5F D6");
     PATCH_LIB("libCrashSight.so", "0x38C10", "C0 03 5F D6");
     
+    // 64-bit report blocks
     PATCH_LIB("libanogs.so", "0x6F4A5", "00 00 80 D2 C0 03 5F D6");
     PATCH_LIB("libanogs.so", "0x9561C", "00 00 80 D2 C0 03 5F D6");
     PATCH_LIB("libanogs.so", "0xA42DF", "00 00 80 D2 C0 03 5F D6");
     PATCH_LIB("libanogs.so", "0x48AF3", "00 00 80 D2 C0 03 5F D6");
+    
+    // 32-bit report blocks
+    PATCH_LIB("libanogs.so", "0x379398", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x379492", "00 00 A0 E3 1E FF 2F E1");
+    PATCH_LIB("libanogs.so", "0x379334", "00 00 A0 E3 1E FF 2F E1"); // TDM report block
+    PATCH_LIB("libanogs.so", "0x38BB5E", "00 00 A0 E3 1E FF 2F E1"); // GL KR 32-bit
+    PATCH_LIB("libanogs.so", "0x38BA6C", "00 00 A0 E3 1E FF 2F E1"); // GL KR 32-bit
 }
 
 // ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 // █ End of Bypass.h - Allah hu akbar, Made with 💖 by IBR
-// ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ 
-
-my new bypass -> XELAHOT-CHEAT OFFICIAL CHANNEL:
-sub_36699A
-sub_366926
-
-32 BİT 
-
-
-libanogs.so
-
-Report block 32 
-PATCH_LIB("libangos.so","0x379398", "00 00 A0 E3 1E FF 2F E1");
-
-PATCH_LIB("libangos.so","0x379492", "00 00 A0 E3 1E FF 2F E1");
-Gl kr
-
-CR : @SRC_AL_FREE
-
-credit : @SanalOwnerTR
-
-Tdm report 
-PATCH_LIB("libangos.so","0x379334", "00 00 A0 E3 1E FF 2F E1");
-32 bit
-
-Report block
-PATCH_LIB("libangos.so","0x38BB5E", "00 00 A0 E3 1E FF 2F E1");
-
-PATCH_LIB("libangos.so","0x38BA6C", "00 00 A0 E3 1E FF 2F E1");
-GL KR 32 BİT
-
-HOOK_LIB_NO_ORIG("libanogs.so", "0x15F4BC", sub_15F4BC);// 
-
-// 30 GÜN FİX 
-
-32 BİT
-
-__aeabi_memcpy4  .plt  0006F26C  0000000C      R  .  .  .  its_Halley.  .  .  .
-__aeabi_memcpy  .plt  0006F278  0000000C      R  .  .  .  .  .  .  .
-__aeabi_memcpy8  .plt  0006F5B4  0000000C      R  .  .  .  .  .  .  .
-memcpy           .plt  0006F7C4  0000000C      R  .  .  .  .  .  T  .                                                                                                                                                                      
-~ BGMI ~ 32bit  ~1 day violation~                                                                                                                                                                                                                                                Regards ~ @ec1lz
-
-unsigned __int8 *__fastcall sub_3797BC(int a1, unsigned int a2 , int its_Halley)
-{
-  unsigned __int8 *result; // r0
-  _DWORD *v5; // r0
-  unsigned __int8 *v6; // [sp+4h] [bp-Ch] BYREF
-
-  result = (unsigned __int8 *)sub_379248();
-  if ( a2 <= 6 )
-  {
-    result = (unsigned __int8 *)dword_4AA06C;
-    if ( !dword_4AA06C[a2] )
-    {
-      dword_4AA06C[a2] = 1;
-      switch ( a2 )
-      {
-        case 0u:
-          result = sub_3923B4(32879);
-          break;
-        case 1u:
-          result = sub_392F48(32892);
-          break;
-        case 2u:
-          result = sub_38E808(32912);
-          break;
-        case 3u:
-          result = sub_38F648(32928);
-          break;
-        case 4u:
-          result = (unsigned __int8 *)&dword_4AA060;
-          if ( dword_4AA060 > 2 )
-            return result;
-          ++dword_4AA060;
-          result = sub_39056C(32945);
-          break;
-        case 5u:
-          result = (unsigned __int8 *)&dword_4AA064;
-          if ( dword_4AA064 > 2 )
-            return result;
-          ++dword_4AA064;
-          result = sub_391904(32967);
-          break;
-        case 6u:
-          result = (unsigned __int8 *)&dword_4AA068;
-          if ( dword_4AA068 > 2 )
-            return result;
-          ++dword_4AA068;
-          result = sub_392C9C(32989);
-          break;
-        default:
-          goto LABEL_16;
-      }
-      a2 = (unsigned int)result;
-      if ( result )
-      {
-LABEL_16:
-        result = (unsigned __int8 *)sub_36699A(a2);
-        if ( result )
-        {
-          result = (unsigned __int8 *)sub_379300((int)"monitor", a2, a1, 1);
-          v6 = result;
-          if ( result )
-          {
-            (*(void (__fastcall **)(unsigned __int8 *))(*(_DWORD *)result + 20))(result);
-            v5 = (_DWORD *)dword_4AA040;
-            if ( !dword_4AA040 )
-            {
-              v5 = (_DWORD *)((int (__fastcall *)(int))loc_3A9F48)(16);
-              dword_4AA040 = (int)v5;
-              *v5 = &off_44BA74;
-              v5[1] = &off_44BAA0;
-              v5[2] = 0;
-              v5[3] = 0;
-            }
-            if ( v5 )
-              ++v5;
-            return (unsigned __int8 *)sub_379468(v5, (int)&v6);
-          }
-        }
-      }
-    }
-  }
-  return result + its_Halley;
-}                                                                                                                                                                                                                                                                      
-~ BGMI + GLOBAL ~ 32bit  3.7  ~ MONITOR ~                                                                                                                                                                                                                                                Regards ~ @ec1lz
+// ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
