@@ -1,4 +1,4 @@
-Iske andar addd kar do esp aimbot ka setup bhi dialog se call karna full jo tumne popup bnaya hai ise add kaaro 
+
 #include "Helper/include.h"
 #include "Helper/definition.h"
 #include "Items.h"
@@ -12,6 +12,177 @@ std::map<int, bool> Items;
 #include <Substrate/SubstrateHook.h>
 #include <Substrate/CydiaSubstrate.h>
 #endif
+
+// Global variables for the cyberpunk popup
+bool showCyberpunkPopup = true;  // Set to true initially to show the popup once
+bool popupOptionSelected = false;
+int selectedIBROption = 0;
+
+// Cyberpunk 2077 Style IBR Popup function
+void ShowCyberpunkIBRSelectionPopup()
+{
+    // Cyberpunk color palette
+    ImVec4 neonBlue = ImVec4(0.0f, 0.85f, 1.0f, 1.0f);         // Bright cyan/blue
+    ImVec4 neonYellow = ImVec4(1.0f, 0.93f, 0.0f, 1.0f);       // Electric yellow
+    ImVec4 neonPink = ImVec4(1.0f, 0.0f, 0.86f, 1.0f);         // Hot pink
+    ImVec4 darkBg = ImVec4(0.05f, 0.02f, 0.1f, 0.98f);         // Dark background
+    ImVec4 glitchEffect = ImVec4(0.0f, 0.55f, 0.85f, 0.9f);    // Digital glitch color
+    ImVec4 buttonBg = ImVec4(0.12f, 0.12f, 0.18f, 0.95f);      // Button background
+    ImVec4 buttonHover = ImVec4(0.18f, 0.18f, 0.28f, 1.0f);    // Button hover
+    ImVec4 buttonActive = ImVec4(0.0f, 0.4f, 0.65f, 1.0f);     // Button active
+    
+    // Style configuration - cyberpunk theme
+    ImGuiStyle& style = ImGui::GetStyle();
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);           // Sharp corners
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);            // Sharp frames
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.0f);         // Thick border
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);          // Frame border
+    
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, darkBg);
+    ImGui::PushStyleColor(ImGuiCol_PopupBg, darkBg);
+    ImGui::PushStyleColor(ImGuiCol_Border, neonBlue);
+    ImGui::PushStyleColor(ImGuiCol_Button, buttonBg);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, buttonHover);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, buttonActive);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95f, 0.95f, 0.95f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.05f, 0.05f, 0.12f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.0f, 0.2f, 0.4f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_Separator, neonBlue);
+    
+    // Center window
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(380, 240));
+    
+    // Begin popup when needed
+    if (showCyberpunkPopup)
+    {
+        ImGui::OpenPopup("IBR_SYSTEMS//INITIALIZE");
+    }
+    
+    // Modal popup with cyberpunk style
+    if (ImGui::BeginPopupModal("IBR_SYSTEMS//INITIALIZE", nullptr, 
+                             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+    {
+        // Display version selection options
+        float windowWidth = ImGui::GetWindowWidth();
+        
+        // Title with cyberpunk flair
+        ImGui::Spacing();
+        float titleWidth = ImGui::CalcTextSize("[ SYSTEM CONFIGURATION ]").x;
+        ImGui::SetCursorPosX((windowWidth - titleWidth) * 0.5f);
+        ImGui::TextColored(neonYellow, "[ SYSTEM CONFIGURATION ]");
+        ImGui::Spacing();
+        ImGui::Separator();
+        // Select Version text with cyberpunk style
+        float textWidth = ImGui::CalcTextSize("SELECT OPERATION MODE:").x;
+        ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
+        ImGui::TextColored(neonBlue, "SELECT OPERATION MODE:");
+        ImGui::Spacing();
+        
+        // Options with cyberpunk styling
+        ImGui::PushStyleColor(ImGuiCol_Text, neonYellow);
+        ImGui::Text("> MODE_1: [STEALTH_PROTOCOL]");
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "ESP ONLY");
+        
+        ImGui::PushStyleColor(ImGuiCol_Text, neonPink);
+        ImGui::Text("> MODE_2: [COMBAT_PROTOCOL]");
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "SMART AIMBOT");
+        
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+        
+        // Buttons with cyberpunk style
+        float buttonWidth = 150.0f;
+        float totalWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
+        ImGui::SetCursorPosX((windowWidth - totalWidth) * 0.5f);
+        
+        // ESP Only button
+        ImGui::PushStyleColor(ImGuiCol_Border, neonYellow);
+        ImGui::PushStyleColor(ImGuiCol_Text, neonYellow);
+        if (ImGui::Button("STEALTH_MODE", ImVec2(buttonWidth, 50)))
+        {
+            selectedIBROption = 1; // ESP Only
+            popupOptionSelected = true;  // Mark that an option was selected
+            showCyberpunkPopup = false;  // Prevent popup from showing again
+            
+            // Apply ESP settings
+            Cheat::Esp::Name = true;
+            Cheat::Esp::Line = true;
+            Cheat::Esp::Box = true;
+            Cheat::Esp::Skeleton = true;
+            Cheat::Esp::Distance = true;
+            Cheat::Esp::Health = true;
+            Cheat::Esp::WideView = true;
+            Cheat::Esp::WideViewRange = 110.0f;
+            Cheat::Esp::Target = true;
+            
+            // Disable Aimbot
+            Cheat::Aimbot::Enable = false;
+            
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::PopStyleColor(2);
+        
+        ImGui::SameLine();
+        
+        // Smart Aimbot button
+        ImGui::PushStyleColor(ImGuiCol_Border, neonPink);
+        ImGui::PushStyleColor(ImGuiCol_Text, neonPink);
+        if (ImGui::Button("COMBAT_MODE", ImVec2(buttonWidth, 50)))
+        {
+            selectedIBROption = 2; // Smart Aimbot
+            popupOptionSelected = true;  // Mark that an option was selected
+            showCyberpunkPopup = false;  // Prevent popup from showing again
+            
+			
+			Cheat::Esp::Name = true;
+            Cheat::Esp::Line = true;
+            Cheat::Esp::Box = true;
+            Cheat::Esp::Skeleton = true;
+            Cheat::Esp::Distance = true;
+            Cheat::Esp::Health = true;
+            // Enable Aimbot
+            Cheat::Aimbot::Enable = true;
+            Cheat::Aimbot::VisCheck = true;
+            Cheat::Aimbot::IgnoreKnock = true;
+            Cheat::Aimbot::RecoilControl = 1.25f;
+            Cheat::Aimbot::Radius = 350.0f;
+            Cheat::Aimbot::Range = 500.0f;
+            
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::PopStyleColor(2);
+        
+        // Bottom info with glitch effect styling
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+        
+        // System status text
+        float statusWidth = ImGui::CalcTextSize("SYSTEM STATUS: ONLINE").x;
+        ImGui::SetCursorPosX((windowWidth - statusWidth) * 0.5f);
+        ImGui::TextColored(glitchEffect, "SYSTEM STATUS: ONLINE");
+        
+        // Created by IBR with cyberpunk flair
+        float creditWidth = ImGui::CalcTextSize("//DEVELOPED BY IBR//").x;
+        ImGui::SetCursorPosX((windowWidth - creditWidth) * 0.5f);
+        ImGui::TextColored(neonBlue, "//DEVELOPED BY IBR//");
+        
+        ImGui::EndPopup();
+    }
+    
+    // Pop all style colors and vars
+    ImGui::PopStyleColor(10);
+    ImGui::PopStyleVar(4);
+}
+
+
 
 void fuck(void *offset, void* ptr, void **orig)
 {
@@ -61,7 +232,11 @@ void clampAngles(FRotator &angles)
 ImColor outlinecolor = IM_COL32(5, 5, 5, 240);
 void DrawESP(ImDrawList *draw)
 {
-
+		       // Show the cyberpunk popup only once when needed
+    if (showCyberpunkPopup && !popupOptionSelected) 
+    {
+        ShowCyberpunkIBRSelectionPopup();
+    }
 
 static float rainbowHue = 0.0f; 
 rainbowHue += 0.001f; 
@@ -589,7 +764,7 @@ EGLBoolean _eglSwapBuffers(EGLDisplay dpy, EGLSurface surface)
             ImGui::PopItemWidth();
             }else {
 
-		   Cheat::Esp::Name = true;
+		/*   Cheat::Esp::Name = true;
 	       Cheat::Esp::Line = true;
 		   Cheat::Esp::Box = true;
            Cheat::Esp::Skeleton = true;
@@ -603,7 +778,8 @@ EGLBoolean _eglSwapBuffers(EGLDisplay dpy, EGLSurface surface)
            Cheat::Aimbot::RecoilControl = 1.25f;
            Cheat::Aimbot::Radius = 350.0f;
            Cheat::Aimbot::Range = 500.0f;
-           Cheat::Esp::Target = true;
+           Cheat::Esp::Target = true;*/
+
            }
        	   }
     ImGui::End();
@@ -913,4 +1089,3 @@ void FixGameCrash()
     pthread_create(&t, NULL, main_thread, NULL);
 	pthread_create(&t, NULL, anogs_thread, NULL);
         }
-
